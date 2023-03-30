@@ -14,12 +14,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 
 public abstract class DummyLivingEntity extends LivingEntity {
-    protected DummyLivingEntity(final EntityType<? extends LivingEntity> type, final Level world) {
+    public DummyLivingEntity(final EntityType<? extends LivingEntity> type, final Level world) {
         super(type, world);
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         super.defineSynchedData();
         this.setSilent(true);
         this.setNoGravity(true);
@@ -127,11 +127,11 @@ public abstract class DummyLivingEntity extends LivingEntity {
     }
 
     @Override
-    protected void pushEntities() {
+    public void pushEntities() {
     }
 
     @Override
-    protected void doWaterSplashEffect() {
+    public void doWaterSplashEffect() {
     }
 
     @Override
@@ -140,12 +140,12 @@ public abstract class DummyLivingEntity extends LivingEntity {
     }
 
     @Override
-    protected void updateEffectVisibility() {
+    public void updateEffectVisibility() {
         super.updateEffectVisibility();
     }
 
     @Override
-    protected void updateInvisibilityStatus() {
+    public void updateInvisibilityStatus() {
         this.setInvisible(true);
     }
 }

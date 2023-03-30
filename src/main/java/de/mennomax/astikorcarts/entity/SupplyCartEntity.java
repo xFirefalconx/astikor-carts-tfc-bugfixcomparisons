@@ -18,7 +18,7 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -46,34 +46,37 @@ import net.minecraftforge.items.ItemStackHandler;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.function.Supplier;
 
-public final class SupplyCartEntity extends AbstractDrawnInventoryEntity {
-    private static final ImmutableList<EntityDataAccessor<ItemStack>> CARGO = ImmutableList.of(
+public class SupplyCartEntity extends AbstractDrawnInventoryEntity {
+    public final Supplier<? extends Item> drop;
+    public static final ImmutableList<EntityDataAccessor<ItemStack>> CARGO = ImmutableList.of(
         SynchedEntityData.defineId(SupplyCartEntity.class, EntityDataSerializers.ITEM_STACK),
         SynchedEntityData.defineId(SupplyCartEntity.class, EntityDataSerializers.ITEM_STACK),
         SynchedEntityData.defineId(SupplyCartEntity.class, EntityDataSerializers.ITEM_STACK),
         SynchedEntityData.defineId(SupplyCartEntity.class, EntityDataSerializers.ITEM_STACK));
 
-    public SupplyCartEntity(final EntityType<? extends Entity> type, final Level world) {
+    public SupplyCartEntity(final EntityType<? extends Entity> type, final Level world, Supplier<? extends Item> drop) {
         super(type, world);
+        this.drop = drop;
     }
 
     @Override
-    protected AstikorCartsConfig.CartConfig getConfig() {
+    public AstikorCartsConfig.CartConfig getConfig() {
         return AstikorCartsConfig.get().supplyCart;
     }
 
     @Override
-    protected ItemStackHandler initInventory() {
+    public ItemStackHandler initInventory() {
         return new CartItemStackHandler<SupplyCartEntity>(54, this) {
             @Override
-            protected void onLoad() {
+            public void onLoad() {
                 super.onLoad();
                 this.onContentsChanged(0);
             }
 
             @Override
-            protected void onContentsChanged(final int slot) {
+            public void onContentsChanged(final int slot) {
                 final Object2IntMap<Item> totals = new Object2IntLinkedOpenHashMap<>();
                 final Object2ObjectMap<Item, ItemStack> stacks = new Object2ObjectOpenHashMap<>();
                 for (int i = 0; i < this.getSlots(); i++) {
@@ -134,7 +137,7 @@ public final class SupplyCartEntity extends AbstractDrawnInventoryEntity {
         return InteractionResult.SUCCESS;
     }
 
-    private boolean insertDisc(final Player player, final ItemStack held) {
+    public boolean insertDisc(final Player player, final ItemStack held) {
         for (int i = 0; i < this.inventory.getSlots(); i++) {
             final ItemStack stack = this.inventory.getStackInSlot(i);
             if (DiscTag.insert(stack, held)) {
@@ -148,7 +151,7 @@ public final class SupplyCartEntity extends AbstractDrawnInventoryEntity {
         return false;
     }
 
-    private boolean ejectDisc(final Player player) {
+    public boolean ejectDisc(final Player player) {
         for (int i = 0; i < this.inventory.getSlots(); i++) {
             final ItemStack stack = this.inventory.getStackInSlot(i);
             final DiscTag record = DiscTag.get(stack);
@@ -223,11 +226,11 @@ public final class SupplyCartEntity extends AbstractDrawnInventoryEntity {
 
     @Override
     public Item getCartItem() {
-        return AstikorCarts.Items.SUPPLY_CART.get();
+        return drop.get();
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         super.defineSynchedData();
         for (final EntityDataAccessor<ItemStack> parameter : CARGO) {
             this.entityData.define(parameter, ItemStack.EMPTY);
@@ -277,7 +280,7 @@ public final class SupplyCartEntity extends AbstractDrawnInventoryEntity {
                         } catch (final JsonParseException ignored) {
                             continue;
                         }
-                        if (component.getContents() instanceof TranslatableContents translatable && descKey.equals(translatable.getKey())) {
+                        if (component instanceof TranslatableComponent && descKey.equals(((TranslatableComponent) component).getKey())) {
                             lore.remove(i);
                         }
                     }
@@ -304,7 +307,7 @@ public final class SupplyCartEntity extends AbstractDrawnInventoryEntity {
             tag.put("RecordItem", disc.save(new CompoundTag()));
             final CompoundTag display = stack.getOrCreateTagElement("display");
             final ListTag lore = display.getList("Lore", Tag.TAG_STRING);
-            lore.add(StringTag.valueOf(Component.Serializer.toJson(Component.translatable(disc.getDescriptionId() + ".desc"))));
+            lore.add(StringTag.valueOf(Component.Serializer.toJson(new TranslatableComponent(disc.getDescriptionId() + ".desc"))));
             display.put("Lore", lore);
             return true;
         }

@@ -1,19 +1,30 @@
 package de.mennomax.astikorcarts.entity;
 
 import de.mennomax.astikorcarts.world.AstikorWorld;
+
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
+import java.util.function.Supplier;
 
-public final class PostilionEntity extends DummyLivingEntity {
-    public PostilionEntity(final EntityType<? extends PostilionEntity> type, final Level world) {
+public class PostilionEntity extends DummyLivingEntity {
+    public final Supplier<? extends Item> drop;
+
+    public PostilionEntity(final EntityType<? extends PostilionEntity> type, final Level world, Supplier<? extends Item> drop) {
         super(type, world);
+        this.drop = drop;
+    }
+
+    public Item getDropItem()
+    {
+        return drop.get();
     }
 
     @Override
@@ -39,7 +50,7 @@ public final class PostilionEntity extends DummyLivingEntity {
     }
 
     @Nullable
-    private LivingEntity getCoachman() {
+    public LivingEntity getCoachman() {
         final Entity mount = this.getVehicle();
         if (mount != null) {
             return AstikorWorld.get(this.level).map(m -> m.getDrawn(mount)).orElse(Optional.empty())

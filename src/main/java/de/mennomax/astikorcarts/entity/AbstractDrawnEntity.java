@@ -66,24 +66,24 @@ import java.util.List;
 import java.util.UUID;
 
 public abstract class AbstractDrawnEntity extends Entity implements IEntityAdditionalSpawnData {
-    private static final EntityDataAccessor<Integer> TIME_SINCE_HIT = SynchedEntityData.defineId(AbstractDrawnEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> FORWARD_DIRECTION = SynchedEntityData.defineId(AbstractDrawnEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Float> DAMAGE_TAKEN = SynchedEntityData.defineId(AbstractDrawnEntity.class, EntityDataSerializers.FLOAT);
-    private static final EntityDataAccessor<ItemStack> BANNER = SynchedEntityData.defineId(AbstractDrawnEntity.class, EntityDataSerializers.ITEM_STACK);
-    private static final UUID PULL_SLOWLY_MODIFIER_UUID = UUID.fromString("49B0E52E-48F2-4D89-BED7-4F5DF26F1263");
-    private static final UUID PULL_MODIFIER_UUID = UUID.fromString("BA594616-5BE3-46C6-8B40-7D0230C64B77");
-    private int lerpSteps;
-    private double lerpX;
-    private double lerpY;
-    private double lerpZ;
-    private double lerpYaw;
-    private double lerpPitch;
-    protected List<CartWheel> wheels;
-    private int pullingId = -1;
-    private UUID pullingUUID = null;
-    protected double spacing = 1.7D;
+    public static final EntityDataAccessor<Integer> TIME_SINCE_HIT = SynchedEntityData.defineId(AbstractDrawnEntity.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Integer> FORWARD_DIRECTION = SynchedEntityData.defineId(AbstractDrawnEntity.class, EntityDataSerializers.INT);
+    public static final EntityDataAccessor<Float> DAMAGE_TAKEN = SynchedEntityData.defineId(AbstractDrawnEntity.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<ItemStack> BANNER = SynchedEntityData.defineId(AbstractDrawnEntity.class, EntityDataSerializers.ITEM_STACK);
+    public static final UUID PULL_SLOWLY_MODIFIER_UUID = UUID.fromString("49B0E52E-48F2-4D89-BED7-4F5DF26F1263");
+    public static final UUID PULL_MODIFIER_UUID = UUID.fromString("BA594616-5BE3-46C6-8B40-7D0230C64B77");
+    public int lerpSteps;
+    public double lerpX;
+    public double lerpY;
+    public double lerpZ;
+    public double lerpYaw;
+    public double lerpPitch;
+    public List<CartWheel> wheels;
+    public int pullingId = -1;
+    public UUID pullingUUID = null;
+    public double spacing = 1.7D;
     public Entity pulling;
-    protected AbstractDrawnEntity drawn;
+    public AbstractDrawnEntity drawn;
 
     public AbstractDrawnEntity(final EntityType<? extends Entity> entityTypeIn, final Level worldIn) {
         super(entityTypeIn, worldIn);
@@ -177,13 +177,13 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
         }
     }
 
-    private void addStats(final double x, final double y, final double z) {
+    public void addStats(final double x, final double y, final double z) {
         if (!this.level.isClientSide) {
             final int cm = Math.round(Mth.sqrt((float) (x * x + y * y + z * z)) * 100.0F);
             if (cm > 0) {
                 for (final Entity passenger : this.getPassengers()) {
                     if (passenger instanceof Player player) {
-                        player.awardStat(AstikorCarts.Stats.CART_ONE_CM, cm);
+                        player.awardStat(AstikorCarts.Stats.CART_ONE_CM.get(), cm);
                     }
                 }
             }
@@ -289,18 +289,18 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
         }
     }
 
-    private void playAttachSound() {
+    public void playAttachSound() {
         this.playSound(AstikorCarts.SoundEvents.CART_ATTACHED.get(), 0.2F, 1.0F);
     }
 
-    private void playDetachSound() {
+    public void playDetachSound() {
         this.playSound(AstikorCarts.SoundEvents.CART_DETACHED.get(), 0.2F, 1.0F);
     }
 
     /**
      * Attempts to reattach the cart to the last pulling entity.
      */
-    private void attemptReattach() {
+    public void attemptReattach() {
         if (this.level.isClientSide) {
             if (this.pullingId != -1) {
                 final Entity entity = this.level.getEntity(this.pullingId);
@@ -391,7 +391,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
      *
      * @param entityIn
      */
-    protected boolean canBePulledBy(final Entity entityIn) {
+    public boolean canBePulledBy(final Entity entityIn) {
         if (this.level.isClientSide) {
             return true;
         }
@@ -401,7 +401,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
         return (this.pulling == null || !this.pulling.isAlive()) && !this.hasPassenger(entityIn) && this.canPull(entityIn);
     }
 
-    private boolean canPull(final Entity entity) {
+    public boolean canPull(final Entity entity) {
         if (entity instanceof Saddleable && !((Saddleable) entity).isSaddleable()) return false;
         if (entity instanceof TamableAnimal && !((TamableAnimal) entity).isTame()) return false;
         final ArrayList<String> allowed = this.getConfig().pullAnimals.get();
@@ -412,7 +412,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
         return allowed.contains(EntityType.getKey(entity.getType()).toString());
     }
 
-    protected abstract AstikorCartsConfig.CartConfig getConfig();
+    public abstract AstikorCartsConfig.CartConfig getConfig();
 
     @Override
     public boolean hurt(final DamageSource source, final float amount) {
@@ -439,7 +439,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
         return false;
     }
 
-    protected InteractionResult useBanner(final Player player, final InteractionHand hand) {
+    public InteractionResult useBanner(final Player player, final InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (stack.is(ItemTags.BANNERS)) {
             ItemStack oldBanner = this.getBanner();
@@ -486,7 +486,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
     public void onDestroyedAndDoDrops(final DamageSource source) {
     }
 
-    private void tickLerp() {
+    public void tickLerp() {
         if (this.lerpSteps > 0) {
             final double dx = (this.lerpX - this.getX()) / this.lerpSteps;
             final double dy = (this.lerpY - this.getY()) / this.lerpSteps;
@@ -522,7 +522,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
     }
 
     @Override
-    protected void addPassenger(final Entity passenger) {
+    public void addPassenger(final Entity passenger) {
         super.addPassenger(passenger);
         if (this.isControlledByLocalInstance() && this.lerpSteps > 0) {
             this.lerpSteps = 0;
@@ -558,7 +558,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
         return this.position();
     }
 
-    private Vec3 dismount(final Vec3 dir, LivingEntity rider) {
+    public Vec3 dismount(final Vec3 dir, LivingEntity rider) {
         final double x = this.getX() + dir.x;
         final double y = this.getBoundingBox().minY;
         final double z = this.getZ() + dir.z;
@@ -614,7 +614,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
         return this.entityData.get(BANNER);
     }
 
-    public List<Pair<Holder<BannerPattern>, DyeColor>> getBannerPattern() {
+    public List<Pair<BannerPattern, DyeColor>> getBannerPattern() {
         final ItemStack banner = this.getBanner();
         if (banner.getItem() instanceof BannerItem item) {
             return BannerBlockEntity.createPatterns(item.getColor(), BannerBlockEntity.getItemPatterns(banner));
@@ -643,7 +643,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         this.entityData.define(TIME_SINCE_HIT, 0);
         this.entityData.define(FORWARD_DIRECTION, 1);
         this.entityData.define(DAMAGE_TAKEN, 0.0F);
@@ -651,7 +651,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
     }
 
     @Override
-    protected void readAdditionalSaveData(final CompoundTag compound) {
+    public void readAdditionalSaveData(final CompoundTag compound) {
         if (compound.hasUUID("PullingUUID")) {
             this.pullingUUID = compound.getUUID("PullingUUID");
         }
@@ -661,7 +661,7 @@ public abstract class AbstractDrawnEntity extends Entity implements IEntityAddit
     }
 
     @Override
-    protected void addAdditionalSaveData(final CompoundTag compound) {
+    public void addAdditionalSaveData(final CompoundTag compound) {
         if (this.pulling != null) {
             compound.putUUID("PullingUUID", this.pullingUUID);
         }

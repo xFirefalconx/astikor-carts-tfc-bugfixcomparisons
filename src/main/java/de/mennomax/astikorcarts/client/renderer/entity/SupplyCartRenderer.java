@@ -7,14 +7,18 @@ import com.mojang.math.Matrix3f;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 import de.mennomax.astikorcarts.AstikorCarts;
-import de.mennomax.astikorcarts.client.renderer.AstikorCartsModelLayers;
+import de.mennomax.astikorcarts.client.AstikorRenderHelpers;
 import de.mennomax.astikorcarts.client.renderer.entity.model.SupplyCartModel;
+import de.mennomax.astikorcarts.common.AstikorTags;
 import de.mennomax.astikorcarts.entity.SupplyCartEntity;
+import de.mennomax.astikorcarts.util.AstikorHelpers;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -29,13 +33,12 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.PaintingTextureManager;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.Holder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.decoration.PaintingVariant;
+import net.minecraft.world.entity.decoration.Motive;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
@@ -47,7 +50,7 @@ import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
-import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Iterator;
@@ -65,12 +68,19 @@ public final class SupplyCartRenderer extends DrawnRenderer<SupplyCartEntity, Su
     private static final HumanoidArmorLayer<LivingEntity, HumanoidModel<LivingEntity>, HumanoidModel<LivingEntity>> DUMMY = new HumanoidArmorLayer<>(null, null, null);
 
     private final HumanoidModel<LivingEntity> leggings, armor;
+    private final Pair<ResourceLocation, SupplyCartModel> location;
 
-    public SupplyCartRenderer(final EntityRendererProvider.Context renderManager) {
-        super(renderManager, new SupplyCartModel(renderManager.bakeLayer(AstikorCartsModelLayers.SUPPLY_CART)));
+    public static ModelLayerLocation entityName(String name)
+    {
+        return AstikorRenderHelpers.modelIdentifier("supply_cart/" + name);
+    }
+
+    public SupplyCartRenderer(final EntityRendererProvider.Context renderManager, String name) {
+        super(renderManager, new SupplyCartModel(renderManager.bakeLayer(entityName(name))));
         this.leggings = new HumanoidModel<>(renderManager.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR));
         this.armor = new HumanoidModel<>(renderManager.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR));
         this.shadowRadius = 1.0F;
+        this.location = Pair.of(AstikorHelpers.identifier("textures/entity/supply_cart/" + name + ".png"), new SupplyCartModel(renderManager.bakeLayer(entityName(name))));
     }
 
     @Override
@@ -98,7 +108,7 @@ public final class SupplyCartRenderer extends DrawnRenderer<SupplyCartEntity, Su
         stack.pushPose();
         this.model.getBody().translateAndRotate(stack);
         contents.renderer.render(this, entity, stack, source, packedLight, cargo);
-        final List<Pair<Holder<BannerPattern>, DyeColor>> list = entity.getBannerPattern();
+        final List<Pair<BannerPattern, DyeColor>> list = entity.getBannerPattern();
         if (!list.isEmpty()) {
             stack.translate(0.0D, -0.6D, 1.5D);
             this.renderBanner(stack, source, packedLight, list);
@@ -126,7 +136,7 @@ public final class SupplyCartRenderer extends DrawnRenderer<SupplyCartEntity, Su
             stack.scale(0.65F, 0.65F, 0.65F);
             stack.translate(ix, 0.5D, iz - 1.0D);
             stack.mulPose(Vector3f.ZP.rotationDegrees(180.0F));
-            renderer.renderModel(stack.last(), source.getBuffer(RenderType.cutout()), state, model, r, g, b, packedLight, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
+            renderer.renderModel(stack.last(), source.getBuffer(RenderType.cutout()), state, model, r, g, b, packedLight, OverlayTexture.NO_OVERLAY, EmptyModelData.INSTANCE);
             stack.popPose();
         }
     }
@@ -143,7 +153,7 @@ public final class SupplyCartRenderer extends DrawnRenderer<SupplyCartEntity, Su
 
     private void renderPaintings(final SupplyCartEntity entity, final PoseStack stack, final MultiBufferSource source, final int packedLight, final NonNullList<ItemStack> cargo) {
         final VertexConsumer buf = source.getBuffer(RenderType.entitySolid(Minecraft.getInstance().getPaintingTextures().getBackSprite().atlas().location()));
-        final ObjectList<PaintingVariant> types = StreamSupport.stream(ForgeRegistries.PAINTING_VARIANTS.spliterator(), false)
+        final ObjectList<Motive> types = StreamSupport.stream(ForgeRegistries.PAINTING_TYPES.spliterator(), false)
             .filter(t -> t.getWidth() == 16 && t.getHeight() == 16)
             .collect(Collectors.toCollection(ObjectArrayList::new));
         final Random rng = new Random(entity.getUUID().getMostSignificantBits() ^ entity.getUUID().getLeastSignificantBits());
@@ -159,7 +169,7 @@ public final class SupplyCartRenderer extends DrawnRenderer<SupplyCartEntity, Su
         for (int i = 0, n = 0; i < cargo.size(); i++) {
             final ItemStack itemStack = cargo.get(i);
             if (itemStack.isEmpty()) continue;
-            final PaintingVariant t = types.get(i % types.size());
+            final Motive t = types.get(i % types.size());
             stack.pushPose();
             stack.translate(0.0D, (n++ - (count - 1) * 0.5D) / count, -1.0D / 16.0D * i);
             stack.mulPose(Vector3f.ZP.rotation(rng.nextFloat() * (float) Math.PI));
@@ -198,7 +208,7 @@ public final class SupplyCartRenderer extends DrawnRenderer<SupplyCartEntity, Su
                 }
                 renderer.render(itemStack, ItemTransforms.TransformType.NONE, false, stack, source, packedLight, OverlayTexture.NO_OVERLAY, model);
             } else {
-                rng.setSeed(32L * i + Objects.hashCode(ForgeRegistries.ITEMS.getKey(itemStack.getItem())));
+                rng.setSeed(32L * i + Objects.hashCode(itemStack.getItem().getRegistryName()));
                 stack.translate(x, -0.15D + ((ix + iz) % 2 == 0 ? 0.0D : 1.0e-4D), z);
                 if (ArmorItem.class.equals(itemStack.getItem().getClass()) || DyeableArmorItem.class.equals(itemStack.getItem().getClass())) {
                     this.renderArmor(entity, stack, source, packedLight, itemStack, ix);
@@ -294,7 +304,7 @@ public final class SupplyCartRenderer extends DrawnRenderer<SupplyCartEntity, Su
         }
     }
 
-    private void renderPainting(final PaintingVariant painting, final PoseStack stack, final VertexConsumer buf, final int packedLight) {
+    private void renderPainting(final Motive painting, final PoseStack stack, final VertexConsumer buf, final int packedLight) {
         final PaintingTextureManager uploader = Minecraft.getInstance().getPaintingTextures();
         final int width = painting.getWidth();
         final int height = painting.getHeight();
@@ -359,13 +369,18 @@ public final class SupplyCartRenderer extends DrawnRenderer<SupplyCartEntity, Su
 
     @Override
     public ResourceLocation getTextureLocation(final SupplyCartEntity entity) {
-        return TEXTURE;
+        return getModelWithLocation(entity).getFirst();
+    }
+
+    public Pair<ResourceLocation, SupplyCartModel> getModelWithLocation(SupplyCartEntity entity)
+    {
+        return location;
     }
 
     private enum Contents {
         FLOWERS(s -> s.getItem() instanceof BlockItem && s.is(ItemTags.FLOWERS), SupplyCartRenderer::renderFlowers),
         PAINTINGS(s -> s.getItem() == Items.PAINTING, SupplyCartRenderer::renderPaintings),
-        WHEEL(s -> AstikorCarts.Items.WHEEL.filter(s.getItem()::equals).isPresent(), SupplyCartRenderer::renderWheel),
+        WHEEL(s -> s.is(AstikorTags.Items.CART_WHEEL), SupplyCartRenderer::renderWheel),
         SUPPLIES(s -> true, SupplyCartRenderer::renderSupplies);
 
         private final Predicate<? super ItemStack> predicate;

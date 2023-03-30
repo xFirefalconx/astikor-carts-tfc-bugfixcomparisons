@@ -1,8 +1,10 @@
 package de.mennomax.astikorcarts.client.renderer.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Vector3f;
-import de.mennomax.astikorcarts.entity.PostilionEntity;
+
+import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -13,9 +15,22 @@ import net.minecraft.world.phys.AABB;
 
 import javax.annotation.Nullable;
 
+import de.mennomax.astikorcarts.client.AstikorRenderHelpers;
+import de.mennomax.astikorcarts.client.renderer.entity.model.SupplyCartModel;
+import de.mennomax.astikorcarts.entity.PostilionEntity;
+import de.mennomax.astikorcarts.util.AstikorHelpers;
+
 public final class PostilionRenderer extends EntityRenderer<PostilionEntity> {
-    public PostilionRenderer(final EntityRendererProvider.Context manager) {
+    //private final Pair<ResourceLocation, SupplyCartModel> location;
+
+    public static ModelLayerLocation entityName(String name)
+    {
+        return AstikorRenderHelpers.modelIdentifier("postilion/" + name);
+    }
+
+    public PostilionRenderer(final EntityRendererProvider.Context manager, String name) {
         super(manager);
+        //this.location = Pair.of(AstikorHelpers.identifier("textures/entity/postilion/" + name + ".png"), new SupplyCartModel(manager.bakeLayer(entityName(name))));
     }
 
     @Override

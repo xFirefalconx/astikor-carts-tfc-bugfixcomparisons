@@ -10,25 +10,21 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.CapabilityItemHandler;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 
 import javax.annotation.Nullable;
 
 public abstract class AbstractDrawnInventoryEntity extends AbstractDrawnEntity {
-    private static final Capability<IItemHandler> ITEM_HANDLER_CAPABILITY = CapabilityManager.get(new CapabilityToken<>() {});
     public ItemStackHandler inventory = this.initInventory();
-    private LazyOptional<ItemStackHandler> itemHandler = LazyOptional.of(() -> this.inventory);
+    public LazyOptional<ItemStackHandler> itemHandler = LazyOptional.of(() -> this.inventory);
 
     public AbstractDrawnInventoryEntity(final EntityType<? extends Entity> entityTypeIn, final Level worldIn) {
         super(entityTypeIn, worldIn);
     }
 
-    protected abstract ItemStackHandler initInventory();
+    public abstract ItemStackHandler initInventory();
 
     @Override
     public SlotAccess getSlot(final int slot) {
@@ -60,13 +56,13 @@ public abstract class AbstractDrawnInventoryEntity extends AbstractDrawnEntity {
     }
 
     @Override
-    protected void readAdditionalSaveData(final CompoundTag compound) {
+    public void readAdditionalSaveData(final CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         this.inventory.deserializeNBT(compound.getCompound("Items"));
     }
 
     @Override
-    protected void addAdditionalSaveData(final CompoundTag compound) {
+    public void addAdditionalSaveData(final CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.put("Items", this.inventory.serializeNBT());
     }
@@ -83,7 +79,7 @@ public abstract class AbstractDrawnInventoryEntity extends AbstractDrawnEntity {
 
     @Override
     public <T> LazyOptional<T> getCapability(final Capability<T> capability, @Nullable final Direction facing) {
-        if (this.isAlive() && capability == ITEM_HANDLER_CAPABILITY && this.itemHandler != null)
+        if (this.isAlive() && capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY && this.itemHandler != null)
             return this.itemHandler.cast();
         return super.getCapability(capability, facing);
     }

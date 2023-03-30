@@ -20,8 +20,14 @@ build
 # other
 eclipse
 run
-run-server
-logs
+libs
+resources/Json Generator/assets/*
+resources/Json Generator/data/*
+resources/Json Generator/__pycache__
+resources/__pycache__
+resources_old
+resources_old/*
+.vscode
 
 # Files from Forge MDK
 forge*changelog.txt

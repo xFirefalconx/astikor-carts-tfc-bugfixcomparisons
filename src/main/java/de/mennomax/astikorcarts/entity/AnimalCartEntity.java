@@ -1,7 +1,12 @@
 package de.mennomax.astikorcarts.entity;
 
-import de.mennomax.astikorcarts.AstikorCarts;
+import java.util.function.Supplier;
+
+import de.mennomax.astikorcarts.common.entities.AstikorEntities;
 import de.mennomax.astikorcarts.config.AstikorCartsConfig;
+
+import net.dries007.tfc.util.registry.RegistryWood;
+
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -15,13 +20,32 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
-public final class AnimalCartEntity extends AbstractDrawnEntity {
-    public AnimalCartEntity(final EntityType<? extends Entity> entityTypeIn, final Level worldIn) {
+public class AnimalCartEntity extends AbstractDrawnEntity {
+    public final RegistryWood wood;
+    public final Supplier<? extends Item> drop;
+    public EntityType<? extends Entity> entityTypeIn;
+
+    public PostilionEntity postilionEntity = null;
+
+    public AnimalCartEntity(final EntityType<? extends Entity> entityTypeIn, final Level worldIn, Supplier<? extends Item> drop, RegistryWood wood) {
         super(entityTypeIn, worldIn);
+        this.drop = drop;
+        this.wood = wood;
+    }
+
+    public PostilionEntity getPostilionEntity(RegistryWood wood)
+    {
+        if (postilionEntity != null)
+            return postilionEntity;
+
+        if (wood != null)
+            return AstikorEntities.POSTILION_TFC.get(wood).get().create(this.level);
+
+        return null;
     }
 
     @Override
-    protected AstikorCartsConfig.CartConfig getConfig() {
+    public AstikorCartsConfig.CartConfig getConfig() {
         return AstikorCartsConfig.get().animalCart;
     }
 
@@ -31,7 +55,7 @@ public final class AnimalCartEntity extends AbstractDrawnEntity {
         final Entity coachman = this.getControllingPassenger();
         final Entity pulling = this.getPulling();
         if (pulling != null && coachman != null && pulling.getControllingPassenger() == null) {
-            final PostilionEntity postilion = AstikorCarts.EntityTypes.POSTILION.get().create(this.level);
+            final PostilionEntity postilion = getPostilionEntity(wood);
             if (postilion != null) {
                 postilion.moveTo(pulling.getX(), pulling.getY(), pulling.getZ(), coachman.getYRot(), coachman.getXRot());
                 if (postilion.startRiding(pulling)) {
@@ -84,7 +108,7 @@ public final class AnimalCartEntity extends AbstractDrawnEntity {
     }
 
     @Override
-    protected boolean canAddPassenger(final Entity passenger) {
+    public boolean canAddPassenger(final Entity passenger) {
         return this.getPassengers().size() < 2;
     }
 
@@ -126,6 +150,6 @@ public final class AnimalCartEntity extends AbstractDrawnEntity {
 
     @Override
     public Item getCartItem() {
-        return AstikorCarts.Items.ANIMAL_CART.get();
+        return drop.get();
     }
 }

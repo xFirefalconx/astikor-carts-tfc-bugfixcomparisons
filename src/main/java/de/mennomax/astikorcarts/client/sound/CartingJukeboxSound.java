@@ -5,7 +5,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -17,7 +16,7 @@ public class CartingJukeboxSound extends AbstractTickableSoundInstance {
     private final RecordItem disc;
 
     public CartingJukeboxSound(final SupplyCartEntity cart, final RecordItem disc) {
-        super(disc.getSound(), SoundSource.RECORDS, RandomSource.create());
+        super(disc.getSound(), SoundSource.RECORDS);
         this.cart = cart;
         this.disc = disc;
     }

@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 
 public class AssembledTextureFactory {
@@ -23,13 +23,13 @@ public class AssembledTextureFactory {
         bus.addListener(this::bake);
     }
 
-    private void bake(final ModelEvent.BakingCompleted event) {
+    private void bake(final ModelBakeEvent event) {
         final Minecraft mc = Minecraft.getInstance();
         final ResourceManager resources = mc.getResourceManager();
         final TextureManager textures = mc.getTextureManager();
         final ModelManager sprites = event.getModelManager();
         Object2ObjectMaps.fastForEach(this.textures, e -> {
-            if (resources.getResource(e.getKey()).isPresent()) {
+            if (resources.hasResource(e.getKey())) {
                 textures.release(e.getKey());
             } else {
                 textures.register(e.getKey(), e.getValue().assemble(sprites));

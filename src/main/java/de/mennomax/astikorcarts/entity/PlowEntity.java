@@ -1,11 +1,13 @@
 package de.mennomax.astikorcarts.entity;
 
+import java.util.function.Supplier;
+
 import com.google.common.collect.ImmutableList;
-import de.mennomax.astikorcarts.AstikorCarts;
 import de.mennomax.astikorcarts.config.AstikorCartsConfig;
 import de.mennomax.astikorcarts.inventory.container.PlowContainer;
 import de.mennomax.astikorcarts.util.CartItemStackHandler;
 import de.mennomax.astikorcarts.util.ProxyItemUseContext;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -25,42 +27,50 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.network.NetworkHooks;
 
-public final class PlowEntity extends AbstractDrawnInventoryEntity {
-    private static final int SLOT_COUNT = 3;
-    private static final double BLADEOFFSET = 1.7D;
-    private static final EntityDataAccessor<Boolean> PLOWING = SynchedEntityData.defineId(PlowEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final ImmutableList<EntityDataAccessor<ItemStack>> TOOLS = ImmutableList.of(
+import net.dries007.tfc.common.blocks.GroundcoverBlock;
+import net.dries007.tfc.common.blocks.devices.PlacedItemBlock;
+import net.dries007.tfc.common.blocks.rock.LooseRockBlock;
+
+public class PlowEntity extends AbstractDrawnInventoryEntity {
+    public final Supplier<? extends Item> drop;
+    public static final int SLOT_COUNT = 3;
+    public static final double BLADEOFFSET = 1.7D;
+    public static final EntityDataAccessor<Boolean> PLOWING = SynchedEntityData.defineId(PlowEntity.class, EntityDataSerializers.BOOLEAN);
+    public static final ImmutableList<EntityDataAccessor<ItemStack>> TOOLS = ImmutableList.of(
         SynchedEntityData.defineId(PlowEntity.class, EntityDataSerializers.ITEM_STACK),
         SynchedEntityData.defineId(PlowEntity.class, EntityDataSerializers.ITEM_STACK),
         SynchedEntityData.defineId(PlowEntity.class, EntityDataSerializers.ITEM_STACK));
 
-    public PlowEntity(final EntityType<? extends Entity> entityTypeIn, final Level worldIn) {
+    public PlowEntity(final EntityType<? extends Entity> entityTypeIn, final Level worldIn, Supplier<? extends Item> drop) {
         super(entityTypeIn, worldIn);
         this.spacing = 1.3D;
+        this.drop = drop;
     }
 
     @Override
-    protected AstikorCartsConfig.CartConfig getConfig() {
+    public AstikorCartsConfig.CartConfig getConfig() {
         return AstikorCartsConfig.get().plow;
     }
 
     @Override
-    protected ItemStackHandler initInventory() {
+    public ItemStackHandler initInventory() {
         return new CartItemStackHandler<PlowEntity>(SLOT_COUNT, this) {
             @Override
-            protected void onLoad() {
+            public void onLoad() {
                 for (int i = 0; i < TOOLS.size(); i++) {
                     this.cart.getEntityData().set(TOOLS.get(i), this.getStackInSlot(i));
                 }
             }
 
             @Override
-            protected void onContentsChanged(final int slot) {
+            public void onContentsChanged(final int slot) {
                 this.cart.updateSlot(slot);
             }
         };
@@ -91,7 +101,7 @@ public final class PlowEntity extends AbstractDrawnInventoryEntity {
         }
     }
 
-    private void plow(final Player player) {
+    public void plow(final Player player) {
         for (int i = 0; i < SLOT_COUNT; i++) {
             final ItemStack stack = this.getStackInSlot(i);
             if (stack.getItem() instanceof TieredItem) {
@@ -99,6 +109,26 @@ public final class PlowEntity extends AbstractDrawnInventoryEntity {
                 final double blockPosX = this.getX() + Mth.sin((float) Math.toRadians(this.getYRot() - offset)) * BLADEOFFSET;
                 final double blockPosZ = this.getZ() - Mth.cos((float) Math.toRadians(this.getYRot() - offset)) * BLADEOFFSET;
                 final BlockPos blockPos = new BlockPos(blockPosX, this.getY() - 0.5D, blockPosZ);
+
+                final BlockPos upPos = blockPos.above();
+                final BlockPos upUpPos = upPos.above();
+                final Block blockAt = this.level.getBlockState(blockPos).getBlock();
+                final Block blockAtUp = this.level.getBlockState(upPos).getBlock();
+                final Block blockAtUpUp = this.level.getBlockState(upUpPos).getBlock();
+
+                if (blockAt instanceof BushBlock || blockAt instanceof GroundcoverBlock || blockAt instanceof LooseRockBlock || blockAt instanceof PlacedItemBlock)
+                {
+                    this.level.destroyBlock(blockPos, true);
+                }
+                if (blockAtUp instanceof BushBlock || blockAtUp instanceof GroundcoverBlock || blockAtUp instanceof LooseRockBlock || blockAtUp instanceof PlacedItemBlock)
+                {
+                    this.level.destroyBlock(upPos, true);
+                }
+                if (blockAtUpUp instanceof BushBlock || blockAtUpUp instanceof GroundcoverBlock || blockAtUpUp instanceof LooseRockBlock || blockAtUpUp instanceof PlacedItemBlock)
+                {
+                    this.level.destroyBlock(upUpPos, true);
+                }
+
                 final boolean damageable = stack.isDamageableItem();
                 final int count = stack.getCount();
                 stack.getItem().useOn(new ProxyItemUseContext(player, stack, new BlockHitResult(Vec3.ZERO, Direction.UP, blockPos, false)));
@@ -139,11 +169,11 @@ public final class PlowEntity extends AbstractDrawnInventoryEntity {
 
     @Override
     public Item getCartItem() {
-        return AstikorCarts.Items.PLOW.get();
+        return drop.get();
     }
 
     @Override
-    protected void defineSynchedData() {
+    public void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(PLOWING, false);
         for (final EntityDataAccessor<ItemStack> param : TOOLS) {
@@ -152,20 +182,20 @@ public final class PlowEntity extends AbstractDrawnInventoryEntity {
     }
 
     @Override
-    protected void readAdditionalSaveData(final CompoundTag compound) {
+    public void readAdditionalSaveData(final CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         this.entityData.set(PLOWING, compound.getBoolean("Plowing"));
     }
 
     @Override
-    protected void addAdditionalSaveData(final CompoundTag compound) {
+    public void addAdditionalSaveData(final CompoundTag compound) {
         super.addAdditionalSaveData(compound);
         compound.putBoolean("Plowing", this.entityData.get(PLOWING));
     }
 
-    private void openContainer(final Player player) {
+    public void openContainer(final Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openScreen(serverPlayer,
+            NetworkHooks.openGui(serverPlayer,
                 new SimpleMenuProvider((windowId, playerInventory, p) -> new PlowContainer(windowId, playerInventory, this), this.getDisplayName()),
                 buf -> buf.writeInt(this.getId())
             );

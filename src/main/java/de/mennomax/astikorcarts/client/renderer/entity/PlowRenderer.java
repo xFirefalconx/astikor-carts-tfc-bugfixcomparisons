@@ -1,12 +1,16 @@
 package de.mennomax.astikorcarts.client.renderer.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Vector3f;
 import de.mennomax.astikorcarts.AstikorCarts;
+import de.mennomax.astikorcarts.client.AstikorRenderHelpers;
 import de.mennomax.astikorcarts.client.renderer.AstikorCartsModelLayers;
 import de.mennomax.astikorcarts.client.renderer.entity.model.PlowModel;
 import de.mennomax.astikorcarts.entity.PlowEntity;
+import de.mennomax.astikorcarts.util.AstikorHelpers;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -17,15 +21,27 @@ import net.minecraft.world.item.ItemStack;
 
 public final class PlowRenderer extends DrawnRenderer<PlowEntity, PlowModel> {
     private static final ResourceLocation TEXTURE = new ResourceLocation(AstikorCarts.ID, "textures/entity/plow.png");
+    private final Pair<ResourceLocation, PlowModel> location;
 
-    public PlowRenderer(final EntityRendererProvider.Context renderManager) {
-        super(renderManager, new PlowModel(renderManager.bakeLayer(AstikorCartsModelLayers.PLOW)));
+    public static ModelLayerLocation entityName(String name)
+    {
+        return AstikorRenderHelpers.modelIdentifier("plow/" + name);
+    }
+
+    public PlowRenderer(final EntityRendererProvider.Context renderManager, String name) {
+        super(renderManager, new PlowModel(renderManager.bakeLayer(entityName(name))));
         this.shadowRadius = 1.0F;
+        this.location = Pair.of(AstikorHelpers.identifier("textures/entity/plow/" + name + ".png"), new PlowModel(renderManager.bakeLayer(entityName(name))));
     }
 
     @Override
     public ResourceLocation getTextureLocation(final PlowEntity entity) {
-        return TEXTURE;
+        return getModelWithLocation(entity).getFirst();
+    }
+
+    public Pair<ResourceLocation, PlowModel> getModelWithLocation(PlowEntity entity)
+    {
+        return location;
     }
 
     @Override
