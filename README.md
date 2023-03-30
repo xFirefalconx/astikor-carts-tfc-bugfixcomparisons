@@ -1,5 +1,7 @@
 # AstikorCarts TFC 1.18.2
 
+#### This is a fork of Astikor Carts with the purpose of adding compatibility with TerraFirmaCraft.
+
 [![GitHub](https://img.shields.io/github/license/MennoMax/astikor-carts.svg)](https://github.com/MennoMax/astikor-carts/blob/master/LICENSE.md)
 [![](http://cf.way2muchnoise.eu/full_astikorcarts_downloads.svg)](https://minecraft.curseforge.com/projects/astikorcarts)
 
