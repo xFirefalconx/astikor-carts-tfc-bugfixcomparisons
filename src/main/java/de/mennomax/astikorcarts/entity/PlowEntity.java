@@ -10,12 +10,14 @@ import de.mennomax.astikorcarts.util.ProxyItemUseContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -29,14 +31,18 @@ import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BushBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.network.NetworkHooks;
 
+import net.dries007.tfc.common.TFCTags;
 import net.dries007.tfc.common.blocks.GroundcoverBlock;
 import net.dries007.tfc.common.blocks.devices.PlacedItemBlock;
 import net.dries007.tfc.common.blocks.rock.LooseRockBlock;
+import net.dries007.tfc.common.blocks.wood.ILeavesBlock;
+import net.dries007.tfc.util.Helpers;
 
 public class PlowEntity extends AbstractDrawnInventoryEntity {
     public final Supplier<? extends Item> drop;
@@ -101,40 +107,113 @@ public class PlowEntity extends AbstractDrawnInventoryEntity {
         }
     }
 
-    public void plow(final Player player) {
-        for (int i = 0; i < SLOT_COUNT; i++) {
+    public void plow(final Player player)
+    {
+        for (int i = 0; i < SLOT_COUNT; i++)
+        {
             final ItemStack stack = this.getStackInSlot(i);
-            if (stack.getItem() instanceof TieredItem) {
-                final float offset = 38.0F - i * 38.0F;
-                final double blockPosX = this.getX() + Mth.sin((float) Math.toRadians(this.getYRot() - offset)) * BLADEOFFSET;
-                final double blockPosZ = this.getZ() - Mth.cos((float) Math.toRadians(this.getYRot() - offset)) * BLADEOFFSET;
-                final BlockPos blockPos = new BlockPos(blockPosX, this.getY() - 0.5D, blockPosZ);
+            if (stack.getItem() instanceof TieredItem)
+            {
+                float offset = 38.0F - i * 38.0F;
+                double blockPosX = this.getX() + Mth.sin((float) Math.toRadians(this.getYRot() - offset)) * BLADEOFFSET;
+                double blockPosZ = this.getZ() - Mth.cos((float) Math.toRadians(this.getYRot() - offset)) * BLADEOFFSET;
+                BlockPos blockPos = new BlockPos(blockPosX, this.getY() - 0.5D, blockPosZ);
 
-                final BlockPos upPos = blockPos.above();
-                final BlockPos upUpPos = upPos.above();
-                final Block blockAt = this.level.getBlockState(blockPos).getBlock();
-                final Block blockAtUp = this.level.getBlockState(upPos).getBlock();
-                final Block blockAtUpUp = this.level.getBlockState(upUpPos).getBlock();
+                if (Helpers.isItem(stack.getItem(), TagKey.create(Registry.ITEM_REGISTRY, Helpers.identifier("scythes"))))
+                {
+                    final BlockPos upPos = blockPos.above();
+                    final BlockPos upUpPos = upPos.above();
+                    final BlockState blockStateAt = this.level.getBlockState(blockPos);
+                    final BlockState blockStateAtUp = this.level.getBlockState(upPos);
+                    final BlockState blockStateAtUpUp = this.level.getBlockState(upUpPos);
+                    final Block blockAt = blockStateAt.getBlock();
+                    final Block blockAtUp = blockStateAtUp.getBlock();
+                    final Block blockAtUpUp = blockStateAtUpUp.getBlock();
 
-                if (blockAt instanceof BushBlock || blockAt instanceof GroundcoverBlock || blockAt instanceof LooseRockBlock || blockAt instanceof PlacedItemBlock)
-                {
-                    this.level.destroyBlock(blockPos, true);
-                }
-                if (blockAtUp instanceof BushBlock || blockAtUp instanceof GroundcoverBlock || blockAtUp instanceof LooseRockBlock || blockAtUp instanceof PlacedItemBlock)
-                {
-                    this.level.destroyBlock(upPos, true);
-                }
-                if (blockAtUpUp instanceof BushBlock || blockAtUpUp instanceof GroundcoverBlock || blockAtUpUp instanceof LooseRockBlock || blockAtUpUp instanceof PlacedItemBlock)
-                {
-                    this.level.destroyBlock(upUpPos, true);
-                }
+                    if (blockAt instanceof BushBlock || blockAt instanceof GroundcoverBlock || blockAt instanceof LooseRockBlock || blockAt instanceof PlacedItemBlock || blockAt instanceof ILeavesBlock || Helpers.isBlock(blockAt, TFCTags.Blocks.MINEABLE_WITH_SCYTHE))
+                    {
+                        Block.dropResources(blockStateAt, level, blockPos, blockStateAt.hasBlockEntity() ? level.getBlockEntity(blockPos) : null, player, player.getMainHandItem());
+                        this.level.destroyBlock(blockPos, true);
+                    }
+                    if (blockAtUp instanceof BushBlock || blockAtUp instanceof GroundcoverBlock || blockAtUp instanceof LooseRockBlock || blockAtUp instanceof PlacedItemBlock || blockAtUp instanceof ILeavesBlock || Helpers.isBlock(blockAtUp, TFCTags.Blocks.MINEABLE_WITH_SCYTHE))
+                    {
+                        Block.dropResources(blockStateAtUp, level, upPos, blockStateAtUp.hasBlockEntity() ? level.getBlockEntity(upPos) : null, player, player.getMainHandItem());
+                        this.level.destroyBlock(upPos, true);
+                    }
+                    if (blockAtUpUp instanceof BushBlock || blockAtUpUp instanceof GroundcoverBlock || blockAtUpUp instanceof LooseRockBlock || blockAtUpUp instanceof PlacedItemBlock || blockAtUpUp instanceof ILeavesBlock || Helpers.isBlock(blockAtUpUp, TFCTags.Blocks.MINEABLE_WITH_SCYTHE))
+                    {
+                        Block.dropResources(blockStateAtUpUp, level, upUpPos, blockStateAtUpUp.hasBlockEntity() ? level.getBlockEntity(upUpPos) : null, player, player.getMainHandItem());
+                        this.level.destroyBlock(upUpPos, true);
+                    }
 
-                final boolean damageable = stack.isDamageableItem();
-                final int count = stack.getCount();
-                stack.getItem().useOn(new ProxyItemUseContext(player, stack, new BlockHitResult(Vec3.ZERO, Direction.UP, blockPos, false)));
-                if (damageable && stack.getCount() < count) {
-                    this.playSound(SoundEvents.ITEM_BREAK, 0.8F, 0.8F + this.level.random.nextFloat() * 0.4F);
-                    this.updateSlot(i);
+                    final boolean damageable = stack.isDamageableItem();
+                    final int count = stack.getCount();
+                    stack.getItem().useOn(new ProxyItemUseContext(player, stack, new BlockHitResult(Vec3.ZERO, Direction.UP, blockPos, false)));
+                    if (damageable && stack.getCount() < count)
+                    {
+                        this.playSound(SoundEvents.ITEM_BREAK, 0.8F, 0.8F + this.level.random.nextFloat() * 0.4F);
+                        this.updateSlot(i);
+                    }
+                }
+                else if (Helpers.isItem(stack.getItem(), TFCTags.Items.KNIVES))
+                {
+                    final BlockPos upPos = blockPos.above();
+                    final BlockPos upUpPos = upPos.above();
+                    final Block blockAt = this.level.getBlockState(blockPos).getBlock();
+                    final Block blockAtUp = this.level.getBlockState(upPos).getBlock();
+                    final Block blockAtUpUp = this.level.getBlockState(upUpPos).getBlock();
+
+                    if (blockAt instanceof BushBlock || blockAt instanceof GroundcoverBlock || blockAt instanceof LooseRockBlock || blockAt instanceof PlacedItemBlock || blockAt instanceof ILeavesBlock || Helpers.isBlock(blockAt, TFCTags.Blocks.MINEABLE_WITH_KNIFE))
+                    {
+                        this.level.destroyBlock(blockPos, true);
+                    }
+                    if (blockAtUp instanceof BushBlock || blockAtUp instanceof GroundcoverBlock || blockAtUp instanceof LooseRockBlock || blockAtUp instanceof PlacedItemBlock || blockAtUp instanceof ILeavesBlock || Helpers.isBlock(blockAtUp, TFCTags.Blocks.MINEABLE_WITH_KNIFE))
+                    {
+                        this.level.destroyBlock(upPos, true);
+                    }
+                    if (blockAtUpUp instanceof BushBlock || blockAtUpUp instanceof GroundcoverBlock || blockAtUpUp instanceof LooseRockBlock || blockAtUpUp instanceof PlacedItemBlock || blockAtUpUp instanceof ILeavesBlock || Helpers.isBlock(blockAtUpUp, TFCTags.Blocks.MINEABLE_WITH_KNIFE))
+                    {
+                        this.level.destroyBlock(upUpPos, true);
+                    }
+
+                    final boolean damageable = stack.isDamageableItem();
+                    final int count = stack.getCount();
+                    stack.getItem().useOn(new ProxyItemUseContext(player, stack, new BlockHitResult(Vec3.ZERO, Direction.UP, blockPos, false)));
+                    if (damageable && stack.getCount() < count)
+                    {
+                        this.playSound(SoundEvents.ITEM_BREAK, 0.8F, 0.8F + this.level.random.nextFloat() * 0.4F);
+                        this.updateSlot(i);
+                    }
+                }
+                else
+                {
+                    final BlockPos upPos = blockPos.above();
+                    final BlockPos upUpPos = upPos.above();
+                    final Block blockAt = this.level.getBlockState(blockPos).getBlock();
+                    final Block blockAtUp = this.level.getBlockState(upPos).getBlock();
+                    final Block blockAtUpUp = this.level.getBlockState(upUpPos).getBlock();
+
+                    if (blockAt instanceof BushBlock || blockAt instanceof GroundcoverBlock || blockAt instanceof LooseRockBlock || blockAt instanceof PlacedItemBlock)
+                    {
+                        this.level.destroyBlock(blockPos, true);
+                    }
+                    if (blockAtUp instanceof BushBlock || blockAtUp instanceof GroundcoverBlock || blockAtUp instanceof LooseRockBlock || blockAtUp instanceof PlacedItemBlock)
+                    {
+                        this.level.destroyBlock(upPos, true);
+                    }
+                    if (blockAtUpUp instanceof BushBlock || blockAtUpUp instanceof GroundcoverBlock || blockAtUpUp instanceof LooseRockBlock || blockAtUpUp instanceof PlacedItemBlock)
+                    {
+                        this.level.destroyBlock(upUpPos, true);
+                    }
+
+                    final boolean damageable = stack.isDamageableItem();
+                    final int count = stack.getCount();
+                    stack.getItem().useOn(new ProxyItemUseContext(player, stack, new BlockHitResult(Vec3.ZERO, Direction.UP, blockPos, false)));
+                    if (damageable && stack.getCount() < count)
+                    {
+                        this.playSound(SoundEvents.ITEM_BREAK, 0.8F, 0.8F + this.level.random.nextFloat() * 0.4F);
+                        this.updateSlot(i);
+                    }
                 }
             }
         }
