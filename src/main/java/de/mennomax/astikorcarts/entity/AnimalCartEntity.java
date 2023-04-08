@@ -98,8 +98,8 @@ public class AnimalCartEntity extends AbstractDrawnEntity {
     @Override
     public void push(final Entity entityIn) {
         if (!entityIn.hasPassenger(this)) {
-            if (!this.level.isClientSide && this.getPulling() != entityIn && this.getControllingPassenger() == null && this.getPassengers().size() < 2 && !entityIn.isPassenger() && entityIn.getBbWidth() < this.getBbWidth() && entityIn instanceof LivingEntity
-                && !(entityIn instanceof WaterAnimal) && !(entityIn instanceof Player)) {
+            if (!this.level.isClientSide && this.getPulling() != entityIn && this.getControllingPassenger() == null && this.getPassengers().size() <= AstikorCartsConfig.get().config.maxAnimalSize.get() && !entityIn.isPassenger() && (entityIn.getBbWidth() < this.getBbWidth() || this.getPassengers().size() <= AstikorCartsConfig.get().config.maxAnimalSize.get()) && entityIn instanceof LivingEntity
+                && canCarryWaterEntities(entityIn) && canPushIntoPlayers(entityIn)) {
                 entityIn.startRiding(this);
             } else {
                 super.push(entityIn);
@@ -107,9 +107,19 @@ public class AnimalCartEntity extends AbstractDrawnEntity {
         }
     }
 
+    public static boolean canPushIntoPlayers(Entity entityIn)
+    {
+        return entityIn instanceof Player && AstikorCartsConfig.get().config.canPushIntoPlayers.get();
+    }
+
+    public static boolean canCarryWaterEntities(Entity entityIn)
+    {
+        return entityIn instanceof WaterAnimal && AstikorCartsConfig.get().config.canCarryWaterEntities.get();
+    }
+
     @Override
     public boolean canAddPassenger(final Entity passenger) {
-        return this.getPassengers().size() < 2;
+        return this.getPassengers().size() <= AstikorCartsConfig.get().config.maxAnimalSize.get();
     }
 
     @Override

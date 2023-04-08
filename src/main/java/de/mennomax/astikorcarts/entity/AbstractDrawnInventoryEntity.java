@@ -16,28 +16,51 @@ import net.minecraftforge.items.ItemStackHandler;
 
 import javax.annotation.Nullable;
 
-public abstract class AbstractDrawnInventoryEntity extends AbstractDrawnEntity {
+import net.dries007.tfc.common.capabilities.size.ItemSizeManager;
+import net.dries007.tfc.common.container.ISlotCallback;
+
+import de.mennomax.astikorcarts.config.AstikorCartsConfig;
+
+public abstract class AbstractDrawnInventoryEntity extends AbstractDrawnEntity implements ISlotCallback
+{
+    public static boolean isValid(ItemStack stack)
+    {
+        return ItemSizeManager.get(stack).getSize(stack).isEqualOrSmallerThan(AstikorCartsConfig.get().config.maxItemSize.get());
+    }
+
+    @Override
+    public boolean isItemValid(int slot, ItemStack stack)
+    {
+        return isValid(stack);
+    }
+
     public ItemStackHandler inventory = this.initInventory();
     public LazyOptional<ItemStackHandler> itemHandler = LazyOptional.of(() -> this.inventory);
 
-    public AbstractDrawnInventoryEntity(final EntityType<? extends Entity> entityTypeIn, final Level worldIn) {
+    public AbstractDrawnInventoryEntity(final EntityType<? extends Entity> entityTypeIn, final Level worldIn)
+    {
         super(entityTypeIn, worldIn);
     }
 
     public abstract ItemStackHandler initInventory();
 
     @Override
-    public SlotAccess getSlot(final int slot) {
+    public SlotAccess getSlot(final int slot)
+    {
         ItemStackHandler inventory = this.inventory;
-        if (slot >= 0 && slot < inventory.getSlots()) {
-            return new SlotAccess() {
+        if (slot >= 0 && slot < inventory.getSlots())
+        {
+            return new SlotAccess()
+            {
                 @Override
-                public ItemStack get() {
+                public ItemStack get()
+                {
                     return inventory.getStackInSlot(slot);
                 }
 
                 @Override
-                public boolean set(final ItemStack stack) {
+                public boolean set(final ItemStack stack)
+                {
                     inventory.setStackInSlot(slot, stack);
                     return true;
                 }
@@ -47,8 +70,10 @@ public abstract class AbstractDrawnInventoryEntity extends AbstractDrawnEntity {
     }
 
     @Override
-    public void onDestroyedAndDoDrops(final DamageSource source) {
-        for (int i = 0; i < this.inventory.getSlots(); i++) {
+    public void onDestroyedAndDoDrops(final DamageSource source)
+    {
+        for (int i = 0; i < this.inventory.getSlots(); i++)
+        {
             ItemEntity itementity = new ItemEntity(this.level, this.getX(), this.getY(), this.getZ(), this.inventory.getStackInSlot(i));
             itementity.setDefaultPickUpDelay();
             this.level.addFreshEntity(itementity);
@@ -56,29 +81,34 @@ public abstract class AbstractDrawnInventoryEntity extends AbstractDrawnEntity {
     }
 
     @Override
-    public void readAdditionalSaveData(final CompoundTag compound) {
+    public void readAdditionalSaveData(final CompoundTag compound)
+    {
         super.readAdditionalSaveData(compound);
         this.inventory.deserializeNBT(compound.getCompound("Items"));
     }
 
     @Override
-    public void addAdditionalSaveData(final CompoundTag compound) {
+    public void addAdditionalSaveData(final CompoundTag compound)
+    {
         super.addAdditionalSaveData(compound);
         compound.put("Items", this.inventory.serializeNBT());
     }
 
 
     @Override
-    public void remove(final RemovalReason reason) {
+    public void remove(final RemovalReason reason)
+    {
         super.remove(reason);
-        if (this.itemHandler != null) {
+        if (this.itemHandler != null)
+        {
             this.itemHandler.invalidate();
             this.itemHandler = null;
         }
     }
 
     @Override
-    public <T> LazyOptional<T> getCapability(final Capability<T> capability, @Nullable final Direction facing) {
+    public <T> LazyOptional<T> getCapability(final Capability<T> capability, @Nullable final Direction facing)
+    {
         if (this.isAlive() && capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY && this.itemHandler != null)
             return this.itemHandler.cast();
         return super.getCapability(capability, facing);
