@@ -117,7 +117,7 @@ public class AstikorCartsConfig
 
         MiscConfig(final ForgeConfigSpec.Builder builder, final String name, final String description)
         {
-            maxAnimalSize = builder.comment("Max animal size that the animal cart can carry.").defineInRange("maxAnimalSize", 2, 0, 69);
+            maxAnimalSize = builder.comment("Max animal size that the animal cart can carry.").defineInRange("maxAnimalSize", 3, 0, 69);
             maxItemSize = builder.comment("The largest (inclusive) size of an item that is allowed in a supply cart.").defineEnum("maxItemSize", Size.VERY_LARGE);
             canPushIntoPlayers = builder.comment("Can the animal cart pick up players by pushing it into them?").define("canPushIntoPlayers", true);
             canCarryWaterEntities = builder.comment("Can the animal cart pick up water animals?").define("canCarryWaterEntities", true);
