@@ -71,7 +71,7 @@ public class SupplyCartEntity extends AbstractDrawnInventoryEntity
     @Override
     public AstikorCartsConfig.CartConfig getConfig()
     {
-        return AstikorCartsConfig.get().supplyCart;
+        return AstikorCartsConfig.COMMON.supplyCart;
     }
 
     @Override

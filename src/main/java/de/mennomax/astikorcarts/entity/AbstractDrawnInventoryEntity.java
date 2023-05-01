@@ -25,7 +25,7 @@ public abstract class AbstractDrawnInventoryEntity extends AbstractDrawnEntity i
 {
     public static boolean isValid(ItemStack stack)
     {
-        return ItemSizeManager.get(stack).getSize(stack).isEqualOrSmallerThan(AstikorCartsConfig.get().config.maxItemSize.get());
+        return ItemSizeManager.get(stack).getSize(stack).isEqualOrSmallerThan(AstikorCartsConfig.COMMON.config.maxItemSize.get());
     }
 
     @Override

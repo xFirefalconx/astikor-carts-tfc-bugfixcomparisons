@@ -46,7 +46,7 @@ public class AnimalCartEntity extends AbstractDrawnEntity {
 
     @Override
     public AstikorCartsConfig.CartConfig getConfig() {
-        return AstikorCartsConfig.get().animalCart;
+        return AstikorCartsConfig.COMMON.animalCart;
     }
 
     @Override
@@ -100,7 +100,7 @@ public class AnimalCartEntity extends AbstractDrawnEntity {
     {
         if (!entityIn.hasPassenger(this))
         {
-            if (!this.level.isClientSide && this.getPulling() != entityIn && this.getControllingPassenger() == null && this.getPassengers().size() <= AstikorCartsConfig.get().config.maxAnimalSize.get() && !entityIn.isPassenger() && (entityIn.getBbWidth() < this.getBbWidth() || this.getPassengers().size() <= AstikorCartsConfig.get().config.maxAnimalSize.get()) && entityIn instanceof LivingEntity
+            if (!this.level.isClientSide && this.getPulling() != entityIn && this.getControllingPassenger() == null && this.getPassengers().size() <= AstikorCartsConfig.COMMON.config.maxAnimalSize.get() && !entityIn.isPassenger() && (entityIn.getBbWidth() < this.getBbWidth() || this.getPassengers().size() <= AstikorCartsConfig.COMMON.config.maxAnimalSize.get()) && entityIn instanceof LivingEntity
                 && canCarryWaterEntities(entityIn) && canPushIntoPlayers(entityIn))
             {
                 entityIn.startRiding(this);
@@ -115,7 +115,7 @@ public class AnimalCartEntity extends AbstractDrawnEntity {
     public static boolean canPushIntoPlayers(Entity entityIn)
     {
         if (entityIn instanceof Player)
-            return AstikorCartsConfig.get().config.canPushIntoPlayers.get();
+            return AstikorCartsConfig.COMMON.config.canPushIntoPlayers.get();
         else
             return true;
     }
@@ -123,14 +123,14 @@ public class AnimalCartEntity extends AbstractDrawnEntity {
     public static boolean canCarryWaterEntities(Entity entityIn)
     {
         if (entityIn instanceof WaterAnimal)
-            return AstikorCartsConfig.get().config.canCarryWaterEntities.get();
+            return AstikorCartsConfig.COMMON.config.canCarryWaterEntities.get();
         else
             return true;
     }
 
     @Override
     public boolean canAddPassenger(final Entity passenger) {
-        return this.getPassengers().size() <= AstikorCartsConfig.get().config.maxAnimalSize.get();
+        return this.getPassengers().size() <= AstikorCartsConfig.COMMON.config.maxAnimalSize.get();
     }
 
     @Override

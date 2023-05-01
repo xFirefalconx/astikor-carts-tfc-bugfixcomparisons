@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 public class CommonInitializer implements Initializer {
     @Override
     public void init(final Context mod) {
-        final ModContainer container = mod.context().getActiveContainer();
+        /*final ModContainer container = mod.context().getActiveContainer();
         ObjectHolderRegistry.addHandler(new Consumer<>() {
             boolean run = true;
 
@@ -46,7 +46,7 @@ public class CommonInitializer implements Initializer {
                         .execute(() -> ObjectHolderRegistry.removeHandler(this));
                 }
             }
-        });
+        });*/
         mod.modBus().<EntityAttributeCreationEvent>addListener(e -> {
             for (Wood wood : Wood.class.getEnumConstants())
             {

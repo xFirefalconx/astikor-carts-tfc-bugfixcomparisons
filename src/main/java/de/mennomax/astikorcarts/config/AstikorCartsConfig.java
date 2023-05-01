@@ -1,6 +1,5 @@
 package de.mennomax.astikorcarts.config;
 
-import net.dries007.tfc.common.capabilities.size.Size;
 import net.jodah.typetools.TypeResolver;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -8,7 +7,8 @@ import net.minecraft.world.entity.ItemSteerable;
 import net.minecraft.world.entity.Saddleable;
 import net.minecraft.world.entity.animal.horse.Llama;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.ForgeRegistryEntry;
@@ -16,34 +16,24 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import net.dries007.tfc.common.capabilities.size.Size;
+import net.dries007.tfc.util.Helpers;
+
 public class AstikorCartsConfig
 {
+    public static final Common COMMON = register(ModConfig.Type.COMMON, Common::new);
 
-    public static Common get()
+    public static void init() {}
+
+    private static <C> C register(ModConfig.Type type, Function<ForgeConfigSpec.Builder, C> factory)
     {
-        return Holder.COMMON;
-    }
-
-    public static ForgeConfigSpec spec()
-    {
-        return Holder.COMMON_SPEC;
-    }
-
-    private static final class Holder
-    {
-        private static final Common COMMON;
-
-        private static final ForgeConfigSpec COMMON_SPEC;
-
-        static
-        {
-            final Pair<Common, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(Common::new);
-            COMMON = specPair.getLeft();
-            COMMON_SPEC = specPair.getRight();
-        }
+        Pair<C, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(factory);
+        if (!Helpers.BOOTSTRAP_ENVIRONMENT) ModLoadingContext.get().registerConfig(type, specPair.getRight());
+        return specPair.getLeft();
     }
 
     public static class Common

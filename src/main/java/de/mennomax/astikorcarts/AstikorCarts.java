@@ -3,6 +3,7 @@ package de.mennomax.astikorcarts;
 import de.mennomax.astikorcarts.client.ClientInitializer;
 import de.mennomax.astikorcarts.common.entities.*;
 import de.mennomax.astikorcarts.common.items.*;
+import de.mennomax.astikorcarts.config.AstikorCartsConfig;
 import de.mennomax.astikorcarts.inventory.container.PlowContainer;
 import de.mennomax.astikorcarts.network.NetBuilder;
 import de.mennomax.astikorcarts.network.clientbound.UpdateDrawnMessage;
@@ -82,6 +83,7 @@ public final class AstikorCarts {
         REG.registerAll(ctx.modBus(), Stats.R);
         AstikorItems.ITEMS.register(ctx.modBus());
         AstikorEntities.ENTITIES.register(ctx.modBus());
+        AstikorCartsConfig.init();
 
         SoundEvents.R.register(ctx.modBus());
         ContainerTypes.R.register(ctx.modBus());
